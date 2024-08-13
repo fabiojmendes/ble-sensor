@@ -30,29 +30,33 @@ struct Config {
 }
 
 struct TempReading {
-    temp: f64,
-    voltage: u16,
     version: u8,
     counter: u8,
+    temp: f32,
+    voltage: u16,
 }
 
 impl TryFrom<&[u8]> for TempReading {
-    type Error = ();
+    type Error = &'static str;
 
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
         if data.len() < 6 {
-            return Err(());
+            return Err("Buffer is too small");
         }
-        let temp = f64::from(LittleEndian::read_i16(&data[..2])) / 100.0;
-        let voltage = LittleEndian::read_u16(&data[2..4]);
-        let version = data[4];
-        let counter = data[5];
+        let version = data[0];
+        let counter = data[1];
+        let raw_temp = LittleEndian::read_i16(&data[2..4]);
+        if raw_temp == i16::MIN {
+            return Err("Invalid temperature");
+        }
+        let temp = f32::from(raw_temp) / 100.0;
+        let voltage = LittleEndian::read_u16(&data[4..]);
 
         Ok(TempReading {
-            temp,
-            voltage,
             version,
             counter,
+            temp,
+            voltage,
         })
     }
 }
@@ -89,7 +93,7 @@ async fn main() -> bluer::Result<()> {
         while let Some(evt) = device_events.next().await {
             if let AdapterEvent::DeviceAdded(addr) = evt {
                 let device = adapter.device(addr)?;
-                if device.name().await? != Some(String::from("BLETempSensor")) {
+                if device.name().await? != Some(String::from("Tempsys")) {
                     continue;
                 }
                 let rssi = device.rssi().await?.unwrap_or(0);

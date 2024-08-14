@@ -94,6 +94,13 @@ async fn main() -> bluer::Result<()> {
             adapter.name()
         );
         adapter.set_powered(true).await?;
+        adapter
+            .set_discovery_filter(bluer::DiscoveryFilter {
+                duplicate_data: false,
+                pattern: Some(String::from("Tempsys")),
+                ..Default::default()
+            })
+            .await?;
 
         let mut last_counts = HashMap::new();
 
@@ -102,9 +109,6 @@ async fn main() -> bluer::Result<()> {
             if let AdapterEvent::DeviceAdded(addr) = evt {
                 let device = adapter.device(addr)?;
                 log::trace!("Device: {:?} name: {:?}", device, device.name().await?);
-                if device.name().await? != Some(String::from("Tempsys")) {
-                    continue;
-                }
                 let rssi = device.rssi().await?.unwrap_or(0);
                 match device
                     .manufacturer_data()

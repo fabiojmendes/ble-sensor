@@ -152,7 +152,7 @@ async fn main() -> bluer::Result<()> {
     loop {
         match eventloop.poll().await {
             Ok(notification) => log::debug!("Received: {:?}", notification),
-            Err(e) => log::warn!("Error on mqtt: {}", e),
+            Err(e) => log::error!("Error on mqtt: {}", e),
         }
     }
 }

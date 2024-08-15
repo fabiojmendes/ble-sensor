@@ -3,6 +3,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use anyhow::bail;
 use bluer::{AdapterEvent, Session};
 use byteorder::{ByteOrder, LittleEndian};
 use clap::Parser;
@@ -77,7 +78,7 @@ fn timestamp_nanos() -> u128 {
 }
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> bluer::Result<()> {
+async fn main() -> anyhow::Result<()> {
     env_logger::builder().format_timestamp(None).init();
     let config = Config::parse();
 
@@ -150,13 +151,20 @@ async fn main() -> bluer::Result<()> {
                 }
             }
         }
-        Ok::<(), bluer::Error>(())
+        log::warn!("Bluetooth task exited");
+        Err::<(), bluer::Error>(bluer::Error {
+            kind: bluer::ErrorKind::Failed,
+            message: String::from("Task exited"),
+        })
     });
 
     loop {
         match eventloop.poll().await {
             Ok(notification) => log::debug!("Received: {:?}", notification),
-            Err(e) => log::error!("Error on mqtt: {}", e),
+            Err(e) => {
+                log::error!("Error on mqtt: {}", e);
+                bail!(e);
+            }
         }
     }
 }

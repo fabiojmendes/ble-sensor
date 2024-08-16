@@ -87,7 +87,7 @@ async fn main() -> anyhow::Result<()> {
 
     let (client, mut eventloop) = AsyncClient::new(opts, 10);
 
-    task::spawn(async move {
+    let bt_handle = task::spawn(async move {
         let session = Session::new().await?;
         let adapter = session.default_adapter().await?;
         log::info!(
@@ -152,10 +152,7 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         log::warn!("Bluetooth task exited");
-        Err::<(), bluer::Error>(bluer::Error {
-            kind: bluer::ErrorKind::Failed,
-            message: String::from("Task exited"),
-        })
+        Ok::<(), bluer::Error>(())
     });
 
     loop {
@@ -165,6 +162,9 @@ async fn main() -> anyhow::Result<()> {
                 log::error!("Error on mqtt: {}", e);
                 bail!(e);
             }
+        }
+        if bt_handle.is_finished() {
+            bail!("Bluetooth task has returned");
         }
     }
 }

@@ -21,15 +21,15 @@ struct Config {
         help = "MQTT id for persistent connection"
     )]
     id: String,
-    #[clap(short, long, default_value = "localhost", help = "MQTT server host")]
+    #[clap(long, help = "MQTT server host")]
     host: String,
     #[clap(short, long, default_value = "1883", help = "MQTT server port")]
     port: u16,
     #[clap(short, long, help = "MQTT topic")]
     topic: String,
-    #[clap(long, env = "MQTT_USERNAME")]
+    #[clap(short, long, env = "MQTT_USERNAME")]
     username: String,
-    #[clap(long, env = "MQTT_PASSWORD")]
+    #[clap(short, long, env = "MQTT_PASSWORD")]
     password: String,
 }
 

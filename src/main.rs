@@ -17,7 +17,7 @@ struct Config {
     #[clap(
         short,
         long,
-        default_value = "tsprod",
+        default_value = "tempsys-scan",
         help = "MQTT id for persistent connection"
     )]
     id: String,
@@ -81,6 +81,23 @@ fn timestamp_nanos() -> u128 {
 async fn main() -> anyhow::Result<()> {
     env_logger::builder().format_timestamp(None).init();
     let config = Config::parse();
+
+    tracing::info!(
+        "Tempsys scan version {}, built for {} by {}.",
+        built_info::PKG_VERSION,
+        built_info::TARGET,
+        built_info::RUSTC_VERSION
+    );
+    if let (Some(version), Some(hash), Some(dirty)) = (
+        built_info::GIT_VERSION,
+        built_info::GIT_COMMIT_HASH_SHORT,
+        built_info::GIT_DIRTY,
+    ) {
+        tracing::info!("Git version: {version} ({hash})");
+        if dirty {
+            tracing::warn!("Repo was dirty");
+        }
+    }
 
     let mut opts = MqttOptions::new(config.id, config.host, config.port);
     opts.set_credentials(config.username, config.password);
@@ -167,4 +184,8 @@ async fn main() -> anyhow::Result<()> {
             bail!("Bluetooth task has returned");
         }
     }
+}
+
+pub mod built_info {
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
 }

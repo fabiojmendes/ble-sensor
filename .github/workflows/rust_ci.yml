@@ -1,0 +1,60 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: ["master"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust-checks:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate version
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        run: |
+          export CARGO_VERSION=v$(awk '/^version/ {print $3}' Cargo.toml | head -1 | tr -d '"')
+          export GIT_VERSION=${{github.ref_name}}
+          echo "$CARGO_VERSION and $GIT_VERSION"
+          if [[ "${CARGO_VERSION}" != "$GIT_VERSION" ]]; then
+            echo "Tag version and Cargo.toml version don't match" 1>&2
+            exit 1
+          fi
+
+      # - name: Setup Rust
+      #   uses: dtolnay/rust-toolchain@v1
+      #   with:
+      #     toolchain: nightly
+      #     components: rust-src, clippy, rustfmt
+
+      - name: Enable caching
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run fmt command
+        run: cargo fmt --all -- --check --color always
+
+      - name: Run clippy command
+        run: cargo clippy --all-targets --all-features --workspace -- -D warnings
+
+      - name: Run build command
+        run: cargo build --release
+
+      - name: Publish release
+        uses: ghalactic/github-release-from-tag@v5
+        if: github.ref_type == 'tag'
+        with:
+          generateReleaseNotes: "true"
+          assets: |
+            - path: target/release/tempsys-scan
+              name: tempsys-scan-${{ github.ref_name }}.elf

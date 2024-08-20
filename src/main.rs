@@ -82,7 +82,7 @@ async fn main() -> anyhow::Result<()> {
     env_logger::builder().format_timestamp(None).init();
     let config = Config::parse();
 
-    tracing::info!(
+    log::info!(
         "Tempsys scan version {}, built for {} by {}.",
         built_info::PKG_VERSION,
         built_info::TARGET,
@@ -93,9 +93,9 @@ async fn main() -> anyhow::Result<()> {
         built_info::GIT_COMMIT_HASH_SHORT,
         built_info::GIT_DIRTY,
     ) {
-        tracing::info!("Git version: {version} ({hash})");
+        log::info!("Git version: {version} ({hash})");
         if dirty {
-            tracing::warn!("Repo was dirty");
+            log::warn!("Repo was dirty");
         }
     }
 

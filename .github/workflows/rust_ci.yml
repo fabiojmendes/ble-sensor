@@ -41,6 +41,9 @@ jobs:
       - name: Enable caching
         uses: Swatinem/rust-cache@v2
 
+      - name: Install dependencies
+        run: sudo apt install libdbus-1-dev pkg-config
+
       - name: Run fmt command
         run: cargo fmt --all -- --check --color always
 

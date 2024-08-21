@@ -40,8 +40,10 @@ jobs:
             exit 1
           fi
 
+      - uses: cargo-bins/cargo-binstall@main
+
       - name: install cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        run: cargo binstall cross
 
       - name: Run fmt command
         run: cargo fmt --all -- --check --color always

@@ -43,7 +43,7 @@ jobs:
       - uses: cargo-bins/cargo-binstall@main
 
       - name: install cross
-        run: cargo binstall cross
+        run: cargo binstall --no-confirm cross
 
       - name: Run fmt command
         run: cargo fmt --all -- --check --color always

@@ -34,7 +34,7 @@ jobs:
     permissions:
       contents: write
     env:
-      PACKAGE_NAME: ${{github.repository}}-${{matrix.platform.target}}-${{github.ref_name}}.tar.gz
+      PACKAGE_NAME: ${{github.event.repository.name}}-${{matrix.platform.target}}-${{github.ref_name}}.tar.gz
     strategy:
       matrix:
         platform:

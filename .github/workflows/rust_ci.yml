@@ -34,7 +34,7 @@ jobs:
     permissions:
       contents: write
     env:
-      PACKAGE_NAME: tempsys-scan-${{matrix.platform.target}}-${{ github.ref_name }}.tar.gz
+      PACKAGE_NAME: ${{github.repository}}-${{matrix.platform.target}}-${{github.ref_name}}.tar.gz
     strategy:
       matrix:
         platform:
@@ -75,4 +75,4 @@ jobs:
         with:
           generateReleaseNotes: "true"
           assets: |
-            - path: $PACKAGE_NAME
+            - path: ${{env.PACKAGE_NAME}}

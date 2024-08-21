@@ -18,6 +18,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Deps
+        run: sudo apt-get install -y libdbus-1-dev pkg-config
+
       - name: Run fmt command
         run: cargo fmt --all -- --check --color always
 

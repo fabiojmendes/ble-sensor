@@ -40,12 +40,6 @@ jobs:
             exit 1
           fi
 
-      # - name: Enable caching
-      #   uses: Swatinem/rust-cache@v2
-
-      # - name: install dependencies
-      #   run: sudo apt-get install -y libdbus-1-dev pkg-config
-
       - name: install cross
         run: cargo install cross --git https://github.com/cross-rs/cross
 

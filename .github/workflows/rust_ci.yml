@@ -33,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      PACKAGE_NAME: tempsys-scan-${{matrix.platform.target}}-${{ github.ref_name }}.tar.gz
     strategy:
       matrix:
         platform:
@@ -42,8 +44,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        env:
-          PACKAGE_NAME: tempsys-scan-${{matrix.platform.target}}-${{ github.ref_name }}.tar.gz
 
       - name: Validate version
         run: |

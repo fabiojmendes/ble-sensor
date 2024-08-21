@@ -49,7 +49,8 @@ jobs:
         run: |
           export CARGO_VERSION=v$(awk '/^version/ {print $3}' Cargo.toml | head -1 | tr -d '"')
           export GIT_VERSION=${{github.ref_name}}
-          echo "$CARGO_VERSION and $GIT_VERSION"
+          echo "Cargo version: $CARGO_VERSION"
+          echo "Git version: $GIT_VERSION"
           if [[ "${CARGO_VERSION}" != "$GIT_VERSION" ]]; then
             echo "Tag version and Cargo.toml version don't match" 1>&2
             exit 1

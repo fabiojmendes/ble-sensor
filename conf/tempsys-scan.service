@@ -1,0 +1,22 @@
+# vim: ft=systemd
+[Unit]
+Description=Tempsys Bluetooth Scanner
+After=bluetooth.target network-online.target
+Requires=bluetooth.target network-online.target
+
+[Service]
+Environment=RUST_LOG=info
+Environment=HOST=localhost
+Environment=USERNAME=user
+Environment=PASSWORD=pass
+Environment=TOPIC=tempsys/temperature
+
+ExecStart=/usr/local/bin/tempsys-scan --host $HOST \
+                                      --username $USERNAME \
+                                      --password $PASSWORD \
+                                      --topic $TOPIC
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=default.target

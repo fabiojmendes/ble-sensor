@@ -42,6 +42,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        env:
+          PACKAGE_NAME: tempsys-scan-${{matrix.platform.target}}-${{ github.ref_name }}.tar.gz
 
       - name: Validate version
         run: |
@@ -61,10 +63,15 @@ jobs:
       - name: Run build command
         run: cross build --release --target ${{matrix.platform.target}}
 
+      - name: Package
+        run: |
+          tar -czvf $PACKAGE_NAME \
+            target/${{matrix.platform.target}}/release/tempsys-scan \
+            ./conf
+
       - name: Publish release
         uses: ghalactic/github-release-from-tag@v5
         with:
           generateReleaseNotes: "true"
           assets: |
-            - path: target/${{matrix.platform.target}}/release/tempsys-scan
-              name: tempsys-scan-${{matrix.platform.target}}-${{ github.ref_name }}
+            - path: $PACKAGE_NAME

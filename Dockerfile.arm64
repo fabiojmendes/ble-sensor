@@ -1,7 +1,0 @@
-# Use the container that comes with `cross` as a base. It's already got
-# a cross-compile toolchain installed, so that's less work for us.
-FROM ghcr.io/cross-rs/aarch64-unknown-linux-gnu:0.2.2
-
-RUN dpkg --add-architecture arm64 && \
-    apt-get update && \
-    apt-get install --assume-yes libdbus-1-dev:arm64

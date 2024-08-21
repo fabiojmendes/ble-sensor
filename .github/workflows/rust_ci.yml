@@ -16,6 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    strategy:
+      matrix:
+        platform:
+          - target: x86_64-unknown-linux-gnu
+          - target: aarch64-unknown-linux-gnu
 
     steps:
       - name: Checkout repository
@@ -32,26 +37,20 @@ jobs:
             exit 1
           fi
 
-      # - name: Setup Rust
-      #   uses: dtolnay/rust-toolchain@v1
-      #   with:
-      #     toolchain: nightly
-      #     components: rust-src, clippy, rustfmt
-
       - name: Enable caching
         uses: Swatinem/rust-cache@v2
 
-      - name: Install dependencies
-        run: sudo apt install libdbus-1-dev pkg-config
+      - name: install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Run fmt command
         run: cargo fmt --all -- --check --color always
 
       - name: Run clippy command
-        run: cargo clippy --all-targets --all-features --workspace -- -D warnings
+        run: cross clippy --all-targets --all-features --workspace -- -D warnings
 
       - name: Run build command
-        run: cargo build --release
+        run: cross build --release --target ${{matrix.platform.target}}
 
       - name: Publish release
         uses: ghalactic/github-release-from-tag@v5
@@ -59,5 +58,5 @@ jobs:
         with:
           generateReleaseNotes: "true"
           assets: |
-            - path: target/release/tempsys-scan
-              name: tempsys-scan-${{ github.ref_name }}.elf
+            - path: target/${{matrix.platform.target}}/release/tempsys-scan
+              name: tempsys-scan-${{matrix.platform.target}}-${{ github.ref_name }}

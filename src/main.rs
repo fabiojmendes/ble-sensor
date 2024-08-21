@@ -23,7 +23,7 @@ struct Config {
     id: String,
     #[clap(long, help = "MQTT server host")]
     host: String,
-    #[clap(short, long, default_value = "1883", help = "MQTT server port")]
+    #[clap(long, default_value = "1883", help = "MQTT server port")]
     port: u16,
     #[clap(short, long, help = "MQTT topic")]
     topic: String,

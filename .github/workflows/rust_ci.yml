@@ -11,8 +11,22 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust-checks:
-    name: Build
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run fmt command
+        run: cargo fmt --all -- --check --color always
+
+      - name: Run clippy command
+        run: cargo clippy --all-targets --all-features --workspace -- -D warnings
+
+  deploy:
+    if: github.ref_type == 'tag'
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -20,17 +34,13 @@ jobs:
       matrix:
         platform:
           - target: x86_64-unknown-linux-gnu
-            # command: cargo
-
           - target: aarch64-unknown-linux-gnu
-            # command: cross
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Validate version
-        if: github.event_name == 'push' && github.ref_type == 'tag'
         run: |
           export CARGO_VERSION=v$(awk '/^version/ {print $3}' Cargo.toml | head -1 | tr -d '"')
           export GIT_VERSION=${{github.ref_name}}
@@ -45,18 +55,11 @@ jobs:
       - name: install cross
         run: cargo binstall --no-confirm cross
 
-      - name: Run fmt command
-        run: cargo fmt --all -- --check --color always
-
-      - name: Run clippy command
-        run: cross clippy --all-targets --all-features --workspace -- -D warnings
-
       - name: Run build command
         run: cross build --release --target ${{matrix.platform.target}}
 
       - name: Publish release
         uses: ghalactic/github-release-from-tag@v5
-        if: github.ref_type == 'tag'
         with:
           generateReleaseNotes: "true"
           assets: |

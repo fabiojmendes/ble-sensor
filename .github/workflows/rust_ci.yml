@@ -20,10 +20,10 @@ jobs:
       matrix:
         platform:
           - target: x86_64-unknown-linux-gnu
-            command: cargo
+            # command: cargo
 
           - target: aarch64-unknown-linux-gnu
-            command: cross
+            # command: cross
 
     steps:
       - name: Checkout repository
@@ -40,11 +40,11 @@ jobs:
             exit 1
           fi
 
-      - name: Enable caching
-        uses: Swatinem/rust-cache@v2
+      # - name: Enable caching
+      #   uses: Swatinem/rust-cache@v2
 
-      - name: install dependencies
-        run: sudo apt-get install -y libdbus-1-dev pkg-config
+      # - name: install dependencies
+      #   run: sudo apt-get install -y libdbus-1-dev pkg-config
 
       - name: install cross
         run: cargo install cross --git https://github.com/cross-rs/cross
@@ -53,10 +53,10 @@ jobs:
         run: cargo fmt --all -- --check --color always
 
       - name: Run clippy command
-        run: ${{matrix.platform.command}} clippy --all-targets --all-features --workspace -- -D warnings
+        run: cross clippy --all-targets --all-features --workspace -- -D warnings
 
       - name: Run build command
-        run: ${{matrix.platform.command}} build --release --target ${{matrix.platform.target}}
+        run: cross build --release --target ${{matrix.platform.target}}
 
       - name: Publish release
         uses: ghalactic/github-release-from-tag@v5

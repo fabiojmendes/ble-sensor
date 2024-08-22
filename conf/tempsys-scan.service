@@ -7,14 +7,11 @@ Requires=bluetooth.target network-online.target
 [Service]
 Environment=RUST_LOG=info
 Environment=HOST=localhost
-Environment=USERNAME=user
-Environment=PASSWORD=pass
 Environment=TOPIC=tempsys/temperature
+# Define MQTT_USERNAME and MQTT_PASSWORD in this file
+EnvironmentFile=/etc/default/tempsys-scan
 
-ExecStart=/usr/local/bin/tempsys-scan --host $HOST \
-                                      --username $USERNAME \
-                                      --password $PASSWORD \
-                                      --topic $TOPIC
+ExecStart=/usr/local/bin/tempsys-scan --host $HOST --topic $TOPIC
 Restart=on-failure
 RestartSec=15
 

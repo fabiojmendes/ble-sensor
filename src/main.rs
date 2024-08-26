@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fs,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -9,6 +10,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use clap::Parser;
 use futures::StreamExt;
 use rumqttc::{AsyncClient, MqttOptions, QoS};
+use serde::Deserialize;
 use tokio::task;
 
 #[derive(Parser, Debug)]
@@ -31,6 +33,11 @@ struct Config {
     username: String,
     #[clap(short, long, env = "MQTT_PASSWORD")]
     password: String,
+}
+
+#[derive(Deserialize)]
+struct DisplayNames {
+    names: HashMap<String, String>,
 }
 
 struct TempReading {
@@ -99,6 +106,9 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    let names_file = fs::read_to_string("/etc/tempsys/names.toml")?;
+    let names: DisplayNames = toml::from_str(&names_file);
+
     let mut opts = MqttOptions::new(config.id, config.host, config.port);
     opts.set_credentials(config.username, config.password);
 
@@ -140,16 +150,17 @@ async fn main() -> anyhow::Result<()> {
                         }
                         last_counts.insert(addr, reading.counter);
                         let timestamp = timestamp_nanos();
+                        let sender = names.names.get(&addr).unwrap_or(addr);
                         let payload = match reading.temperature() {
                             Ok(temp) => {
                                 format!("sensor,sender={},version={} temperature={:.2},voltage={},rssi={} {}",
-                                            addr, reading.version, temp, reading.voltage, rssi, timestamp)
+                                            sender, reading.version, temp, reading.voltage, rssi, timestamp)
                             }
                             Err(e) => {
                                 log::warn!("Error parsing temperature: {}", e);
                                 format!(
                                     "sensor,sender={},version={} voltage={},rssi={} {}",
-                                    addr, reading.version, reading.voltage, rssi, timestamp
+                                    sender, reading.version, reading.voltage, rssi, timestamp
                                 )
                             }
                         };

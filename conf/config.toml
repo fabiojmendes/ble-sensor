@@ -1,0 +1,11 @@
+devices = [
+  { name = "TestDevice", addr = "AA:BB:CC:11:22:33", device_type = "Fridge" },
+]
+
+[mqtt]
+id = "tempsys-scan"
+host = "localhost"
+port = 1883
+username = "user"
+password = "pass"
+topic = "tempsys/temperature"

@@ -14,9 +14,8 @@ tokio = "1"
 env_logger = "0.11"
 log = "0.4"
 byteorder = "1"
-clap = { version = "4.5", features = ["derive", "env"] }
-serde = "1"
 toml = "0.8"
+serde = { version = "1", features = ["derive"] }
 
 [build-dependencies]
 built = { version = "0.7", features = ["git2", "semver"] }

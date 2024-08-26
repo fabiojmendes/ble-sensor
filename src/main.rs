@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fmt::Display,
     fs,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -7,37 +8,50 @@ use std::{
 use anyhow::bail;
 use bluer::{AdapterEvent, Session};
 use byteorder::{ByteOrder, LittleEndian};
-use clap::Parser;
 use futures::StreamExt;
 use rumqttc::{AsyncClient, MqttOptions, QoS};
 use serde::Deserialize;
 use tokio::task;
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about)]
-struct Config {
-    #[clap(
-        short,
-        long,
-        default_value = "tempsys-scan",
-        help = "MQTT id for persistent connection"
-    )]
+#[derive(Deserialize, Debug)]
+struct MqttConfig {
     id: String,
-    #[clap(long, help = "MQTT server host")]
     host: String,
-    #[clap(long, default_value = "1883", help = "MQTT server port")]
     port: u16,
-    #[clap(short, long, help = "MQTT topic")]
-    topic: String,
-    #[clap(short, long, env = "MQTT_USERNAME")]
     username: String,
-    #[clap(short, long, env = "MQTT_PASSWORD")]
     password: String,
+    topic: String,
 }
 
-#[derive(Deserialize)]
-struct DisplayNames {
-    names: HashMap<String, String>,
+#[derive(Deserialize, Debug)]
+struct DeviceConfig {
+    addr: String,
+    name: String,
+    device_type: DeviceType,
+}
+
+#[derive(Deserialize, Debug)]
+enum DeviceType {
+    Fridge,
+    Freezer,
+    Unknown,
+}
+
+impl Display for DeviceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Self::Fridge => "fridge",
+            Self::Freezer => "freezer",
+            Self::Unknown => "unknown",
+        };
+        write!(f, "{}", name)
+    }
+}
+
+#[derive(Deserialize, Debug)]
+struct TempsysScanConfig {
+    mqtt: MqttConfig,
+    devices: Vec<DeviceConfig>,
 }
 
 struct TempReading {
@@ -87,8 +101,6 @@ fn timestamp_nanos() -> u128 {
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
     env_logger::builder().format_timestamp(None).init();
-    let config = Config::parse();
-
     log::info!(
         "Tempsys scan version {}, built for {} by {}.",
         built_info::PKG_VERSION,
@@ -106,11 +118,18 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    let names_file = fs::read_to_string("/etc/tempsys/names.toml")?;
-    let names: DisplayNames = toml::from_str(&names_file);
+    let config_file = fs::read_to_string("/etc/tempsys/config.toml")?;
+    let config: TempsysScanConfig = toml::from_str(&config_file)?;
 
-    let mut opts = MqttOptions::new(config.id, config.host, config.port);
-    opts.set_credentials(config.username, config.password);
+    let addr_map: HashMap<_, _> = config
+        .devices
+        .into_iter()
+        .map(|d| (d.addr.clone(), d))
+        .collect();
+
+    let mqtt = config.mqtt;
+    let mut opts = MqttOptions::new(mqtt.id, mqtt.host, mqtt.port);
+    opts.set_credentials(mqtt.username, mqtt.password);
 
     let (client, mut eventloop) = AsyncClient::new(opts, 10);
 
@@ -150,23 +169,35 @@ async fn main() -> anyhow::Result<()> {
                         }
                         last_counts.insert(addr, reading.counter);
                         let timestamp = timestamp_nanos();
-                        let sender = names.names.get(&addr).unwrap_or(addr);
+                        let addr_string = addr.to_string();
+                        let unknown_device = DeviceConfig {
+                            addr: addr_string.clone(),
+                            name: addr_string.clone(),
+                            device_type: DeviceType::Unknown,
+                        };
+                        let sender = addr_map.get(&addr_string).unwrap_or(&unknown_device);
                         let payload = match reading.temperature() {
                             Ok(temp) => {
-                                format!("sensor,sender={},version={} temperature={:.2},voltage={},rssi={} {}",
-                                            sender, reading.version, temp, reading.voltage, rssi, timestamp)
+                                format!("sensor,addr={},name={},type={},version={} temperature={:.2},voltage={},rssi={} {}",
+                                            sender.addr, sender.name, sender.device_type,  reading.version, temp, reading.voltage, rssi, timestamp)
                             }
                             Err(e) => {
                                 log::warn!("Error parsing temperature: {}", e);
                                 format!(
-                                    "sensor,sender={},version={} voltage={},rssi={} {}",
-                                    sender, reading.version, reading.voltage, rssi, timestamp
+                                    "sensor,addr={},name={},type={},version={} voltage={},rssi={} {}",
+                                    sender.addr,
+                                    sender.name,
+                                    sender.device_type,
+                                    reading.version,
+                                    reading.voltage,
+                                    rssi,
+                                    timestamp
                                 )
                             }
                         };
                         log::info!("{} (counter={})", payload, reading.counter);
                         client
-                            .publish(&config.topic, QoS::AtLeastOnce, false, payload)
+                            .publish(&mqtt.topic, QoS::AtLeastOnce, false, payload)
                             .await
                             .unwrap();
                     }

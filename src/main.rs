@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     fmt::Display,
     fs,
+    io::Write,
     time::{SystemTime, UNIX_EPOCH},
 };
 
@@ -9,6 +10,7 @@ use anyhow::bail;
 use bluer::{AdapterEvent, Session};
 use byteorder::{ByteOrder, LittleEndian};
 use futures::StreamExt;
+use log::Level;
 use rumqttc::{AsyncClient, MqttOptions, QoS};
 use serde::Deserialize;
 use tokio::task;
@@ -100,7 +102,19 @@ fn timestamp_nanos() -> u128 {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
-    env_logger::builder().format_timestamp(None).init();
+    env_logger::builder()
+        .format(|buf, record| {
+            let priority = match record.level() {
+                Level::Trace => 7,
+                Level::Debug => 7,
+                Level::Info => 6,
+                Level::Warn => 4,
+                Level::Error => 3,
+            };
+            writeln!(buf, "<{}>[{}]: {}", priority, record.level(), record.args())
+        })
+        .init();
+
     log::info!(
         "Tempsys scan version {}, built for {} by {}.",
         built_info::PKG_VERSION,

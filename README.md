@@ -14,7 +14,7 @@ the mqtt broker and also friendly names for each tempsys thermometer.
 
 Here's a sample of what the configuration file should look like:
 
-<https://github.com/fabiojmendes/tempsys-scan/blob/master/conf/config.toml>
+https://github.com/fabiojmendes/tempsys-scan/blob/master/conf/config.toml
 
 ## WIP
 

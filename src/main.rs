@@ -15,6 +15,8 @@ use rumqttc::{AsyncClient, MqttOptions, QoS};
 use serde::Deserialize;
 use tokio::task;
 
+const TEMPSYS_MANUF_ID: u16 = 0xffff;
+
 #[derive(Deserialize, Debug)]
 struct MqttConfig {
     id: String,
@@ -174,7 +176,7 @@ async fn main() -> anyhow::Result<()> {
                 match device
                     .manufacturer_data()
                     .await?
-                    .and_then(|mut d| d.remove(&0xffff))
+                    .and_then(|mut d| d.remove(&TEMPSYS_MANUF_ID))
                     .map(|data| TempReading::try_from(&*data))
                 {
                     Some(Ok(reading)) => {

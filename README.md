@@ -11,32 +11,33 @@ it to a mqtt broker.
 
 A toml configuration file is necessary is necessary to provide the location for
 the mqtt broker and also friendly names for each tempsys thermometer.
+This file should be named `/etc/tempsys/config.toml` and a sample of what
+it should look like is as follow:
 
-Here's a sample of what the configuration file should look like:
+```toml
+devices = [
+  { name = "TestDevice", addr = "AA:BB:CC:11:22:33", device_type = "Fridge" },
+]
 
-<https://github.com/fabiojmendes/tempsys-scan/blob/81ec91aef84a6474ff6c6becbe568decf9a02d4e/conf/config.toml#L1-L11>
-
-## WIP
-
--
+[mqtt]
+id = "tempsys-scan"
+host = "localhost"
+port = 1883
+username = "user"
+password = "pass"
+topic = "tempsys/temperature"
+```
 
 ## Build
 
-Cross compiling for `arm-unknown-linux-gnueabi` (for raspberry pi zero w) on
-Debian 11
+This code is meant to run on a raspberry pi device so a [cross](https://github.com/cross-rs/cross)
+configuration is provided for easy of use.
 
-```shell
-# Assuming the rust toolchain is installed using rustup:
-# Add the target architecture
-rustup target add arm-unknown-linux-gnueabi
+To build it locally you will need to install the dependencies `libdbus-1-dev`
+and `pkg-config`.
 
-# Add arm architecture for dependencies
-dpkg --add-architecture armel
+## WIP
 
-# Install dependencies
-apt update && apt install -y build-essential gcc-arm-linux-gnueabi libdbus-1-dev:armel
-
-# Set the correct sysroot and config path for pkg-config
-export PKG_CONFIG_SYSROOT_DIR=/usr/lib/arm-linux-gnueabi
-export PKG_CONFIG_PATH=/usr/lib/arm-linux-gnueabi/pkgconfig
-```
+- Breakdown code in modules
+- Improve error handling
+- Parse cli arguments?
